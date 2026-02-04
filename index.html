@@ -22,7 +22,10 @@
                     <h2>Send a Valentine</h2>
                     <form id="valentineForm" class="form">
                         <label class="field">
-                            <span>Valentine message</span>
+                            <div class="field-title-row">
+                                <span>Valentine message</span>
+                                <button type="button" id="getCampaignBtn" class="btn btn-secondary btn-small">Get campaign link</button>
+                            </div>
                             <textarea id="valentineMessage" rows="6" placeholder="Write your Valentine message here..." required maxlength="800"></textarea>
                             <div class="field-meta">
                                 <span id="messageCounter">0 / 800</span>
