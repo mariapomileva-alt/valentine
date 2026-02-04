@@ -184,6 +184,14 @@ body {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
+    width: 100%;
+    position: relative;
+    z-index: 1;
+}
+
+.field-title-row .btn {
+    margin-left: auto;
+    pointer-events: auto;
 }
 
 .field-meta {
