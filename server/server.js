@@ -5,6 +5,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import crypto from "crypto";
+import { Resend } from "resend";
 
 dotenv.config();
 
@@ -16,6 +17,8 @@ const PORT = process.env.PORT || 4242;
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "";
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || "";
 const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || "http://localhost:5500/fast-valentine/index.html";
+const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
+const RESEND_FROM = process.env.RESEND_FROM || "";
 const PRICE_EUR = 699;
 const FREE_LIMIT = 25;
 const RATE_LIMIT_PER_DAY = Number(process.env.RATE_LIMIT_PER_DAY || 10);
@@ -23,6 +26,7 @@ const RATE_LIMIT_PER_DAY = Number(process.env.RATE_LIMIT_PER_DAY || 10);
 const stripe = new Stripe(STRIPE_SECRET_KEY, {
   apiVersion: "2024-04-10",
 });
+const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
 
 const dataFile = path.join(__dirname, "campaigns.json");
 const messagesFile = path.join(__dirname, "messages.json");
@@ -122,6 +126,17 @@ app.post("/api/stripe-webhook", express.raw({ type: "application/json" }), (req,
   res.json({ received: true });
 });
 
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Stripe-Signature");
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+  next();
+});
+
 app.use(express.json());
 
 app.post("/api/create-campaign", (_req, res) => {
@@ -164,7 +179,7 @@ app.get("/api/campaign", (req, res) => {
   });
 });
 
-app.post("/api/send", (req, res) => {
+app.post("/api/send", async (req, res) => {
   const campaignId = req.body?.campaign_id;
   const message = req.body?.message;
   if (!campaignId) {
@@ -174,6 +189,14 @@ app.post("/api/send", (req, res) => {
   const campaign = getOrCreateCampaign(campaignId);
   if (campaign.status === "locked") {
     res.status(403).json({ error: "campaign_locked" });
+    return;
+  }
+  if (!message?.recipient_email || !message?.recipient_link) {
+    res.status(400).json({ error: "message_invalid" });
+    return;
+  }
+  if (!resend || !RESEND_FROM) {
+    res.status(500).json({ error: "email_not_configured" });
     return;
   }
   const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket.remoteAddress || "unknown";
@@ -188,6 +211,27 @@ app.post("/api/send", (req, res) => {
 
   const isSuccess = message?.status === "sent";
   if (isSuccess) {
+    const subject = "You received a Valentine 💜";
+    const text = `Someone sent you a Valentine. Open it here: ${message.recipient_link}`;
+    const sendResult = await resend.emails.send({
+      from: RESEND_FROM,
+      to: message.recipient_email,
+      subject,
+      text,
+    });
+    if (!sendResult?.data?.id) {
+      res.status(500).json({ error: "email_send_failed" });
+      return;
+    }
+    if (message.copy_requested && message.sender_email) {
+      await resend.emails.send({
+        from: RESEND_FROM,
+        to: message.sender_email,
+        subject: "Your Valentine was sent 💜",
+        text: `We sent your Valentine. Here is the link you shared: ${message.recipient_link}`,
+      });
+    }
+
     const updated = updateCampaign(campaignId, (current) => {
       const sentCount = current.sent_count + 1;
       const nextStatus = current.status === "unlocked"
