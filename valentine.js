@@ -179,16 +179,7 @@ const getCampaignId = () => {
         window.localStorage.setItem(CAMPAIGN_ID_KEY, fromUrl);
         return fromUrl;
     }
-    const stored = window.localStorage.getItem(CAMPAIGN_ID_KEY);
-    if (stored) {
-        return stored;
-    }
-    const newId = generateToken(10);
-    window.localStorage.setItem(CAMPAIGN_ID_KEY, newId);
-    const url = new URL(window.location.href);
-    url.searchParams.set(CAMPAIGN_PARAM, newId);
-    window.history.replaceState({}, "", url.toString());
-    return newId;
+    return window.localStorage.getItem(CAMPAIGN_ID_KEY);
 };
 
 const getCampaign = () => {
@@ -236,6 +227,9 @@ const getStoredAdminToken = (campaignId) => window.localStorage.getItem(`${ADMIN
 
 const fetchCampaignState = async () => {
     const campaignId = getCampaignId();
+    if (!campaignId) {
+        return getCampaign();
+    }
     const token = adminToken || getStoredAdminToken(campaignId);
     const url = new URL("/api/campaign", window.location.origin);
     url.searchParams.set("c", campaignId);
@@ -293,6 +287,9 @@ const createCampaign = async () => {
 
 const recordCampaignSend = async (payload) => {
     const campaignId = getCampaignId();
+    if (!campaignId) {
+        return { campaign: getCampaign(), error: "campaign_missing" };
+    }
     const previous = getCampaign();
     try {
         const response = await fetch("/api/send", {
@@ -301,7 +298,8 @@ const recordCampaignSend = async (payload) => {
             body: JSON.stringify({ campaign_id: campaignId, message: payload }),
         });
         if (!response.ok) {
-            throw new Error("campaign_send_failed");
+            const data = await response.json().catch(() => ({}));
+            return { campaign: previous, error: data?.error || "campaign_send_failed" };
         }
         const data = await response.json();
         const nextCampaign = data.campaign || data;
@@ -309,16 +307,9 @@ const recordCampaignSend = async (payload) => {
         if (previous.status !== "locked" && nextCampaign.status === "locked") {
             trackEvent("campaign_reached_limit", { campaignId: nextCampaign.id });
         }
-        return nextCampaign;
+        return { campaign: nextCampaign, error: null };
     } catch (error) {
-        const campaign = getCampaign();
-        campaign.sent_count += 1;
-        if (campaign.status === "free" && campaign.sent_count >= campaign.free_limit) {
-            campaign.status = "locked";
-            trackEvent("campaign_reached_limit", { campaignId: campaign.id });
-        }
-        saveCampaign(campaign);
-        return campaign;
+        return { campaign: previous, error: "campaign_send_failed" };
     }
 };
 
@@ -435,6 +426,13 @@ const isCampaignActive = (settings) => {
 const setAdminLinks = () => {
     const baseUrl = getBaseUrl();
     const campaignId = getCampaignId();
+    if (!campaignId) {
+        shareLink.value = "";
+        adminShareLink.value = "";
+        shortLink.value = "";
+        adminLink.href = "#";
+        return;
+    }
     const publicLink = `${baseUrl}/?${CAMPAIGN_PARAM}=${campaignId}`;
     const adminTokenValue = adminToken || getStoredAdminToken(campaignId);
     const adminLinkValue = adminTokenValue
@@ -494,8 +492,34 @@ const updateDomainRule = () => {
     }
 };
 
+const ensureCampaignRequestBlock = () => {
+    let block = document.getElementById("campaignRequestBlock");
+    if (!block) {
+        block = document.createElement("div");
+        block.id = "campaignRequestBlock";
+        block.className = "helper";
+        const button = document.createElement("button");
+        button.type = "button";
+        button.id = "getCampaignBtn";
+        button.className = "btn btn-secondary";
+        button.textContent = "Get campaign link";
+        block.appendChild(button);
+        const helper = document.querySelector(".helper");
+        helper?.parentElement?.insertBefore(block, helper);
+    }
+    return block;
+};
+
 const applyCampaignState = async () => {
-    await refreshCampaignState();
+    const campaignId = getCampaignId();
+    if (!campaignId) {
+        return;
+    }
+    const requestBlock = document.getElementById("campaignRequestBlock");
+    if (requestBlock) {
+        requestBlock.classList.add("hidden");
+    }
+    const campaign = await refreshCampaignState();
     lockCampaignIfNeeded(campaign);
     const locked = campaign.status === "locked";
     const unlocked = isCampaignUnlocked(campaign);
@@ -983,16 +1007,6 @@ const setInitialView = async () => {
 
     syncSettingsForm();
 
-    if (!campaignParam) {
-        const created = await createCampaign();
-        if (created?.campaign_id && created?.admin_token) {
-            adminToken = created.admin_token;
-            window.localStorage.setItem(`${ADMIN_TOKEN_PREFIX}${created.campaign_id}`, adminToken);
-            const url = new URL(created.admin_url, window.location.origin);
-            window.history.replaceState({}, "", url.toString());
-        }
-    }
-
     const campaignId = getCampaignId();
     if (adminParam) {
         adminToken = adminParam;
@@ -1014,7 +1028,36 @@ const setInitialView = async () => {
         return;
     }
 
-    const campaign = await refreshCampaignState();
+    if (!campaignId && !campaignParam) {
+        showView(composeView);
+        const block = ensureCampaignRequestBlock();
+        block.classList.remove("hidden");
+        const button = block.querySelector("#getCampaignBtn");
+        if (button && !button.dataset.bound) {
+            button.dataset.bound = "true";
+            button.addEventListener("click", async () => {
+                const created = await createCampaign();
+                if (!created?.campaign_id || !created?.admin_token) {
+                    formMessage.textContent = "Unable to create a campaign right now.";
+                    return;
+                }
+                adminToken = created.admin_token;
+                window.localStorage.setItem(`${ADMIN_TOKEN_PREFIX}${created.campaign_id}`, adminToken);
+                window.localStorage.setItem(CAMPAIGN_ID_KEY, created.campaign_id);
+                const url = new URL(created.admin_url, window.location.origin);
+                window.history.replaceState({}, "", url.toString());
+                setAdminLinks();
+                await refreshCampaignState();
+                await renderAdmin();
+                showView(adminView);
+            });
+        }
+        sendBtn.disabled = true;
+        formMessage.textContent = "Create a campaign link to start sending.";
+        return;
+    }
+
+    await refreshCampaignState();
     if (adminToken && !isAdminSession) {
         formMessage.textContent = "This admin link is not valid for this campaign.";
     }
@@ -1189,10 +1232,21 @@ valentineForm.addEventListener("submit", async (event) => {
             anonymous: message.anonymous,
             has_image: Boolean(message.image),
             status: message.status,
+            recipient_link: message.recipientLink,
+            copy_requested: message.copyRequested,
+            sender_email: message.senderEmail,
         };
-        const updatedCampaign = await recordCampaignSend(payload);
-        trackEvent("valentine_sent_success", { campaignId: updatedCampaign.id, messageId });
-        lockCampaignIfNeeded(updatedCampaign);
+        const result = await recordCampaignSend(payload);
+        if (result.error) {
+            formMessage.textContent = result.error === "campaign_missing"
+                ? "Create a campaign link to start sending."
+                : result.error === "email_not_configured"
+                    ? "Email delivery is not configured yet."
+                    : "Delivery failed. Please try again.";
+            return;
+        }
+        trackEvent("valentine_sent_success", { campaignId: result.campaign.id, messageId });
+        lockCampaignIfNeeded(result.campaign);
     }
     resetForm();
     showView(thankYouView);
@@ -1329,10 +1383,18 @@ moderationList.addEventListener("click", (event) => {
                 anonymous: message.anonymous,
                 has_image: Boolean(message.image),
                 status: message.status,
+                recipient_link: message.recipientLink,
+                copy_requested: message.copyRequested,
+                sender_email: message.senderEmail,
             };
-            const updatedCampaign = await recordCampaignSend(payload);
-            trackEvent("valentine_sent_success", { campaignId: updatedCampaign.id, messageId: message.id });
-            lockCampaignIfNeeded(updatedCampaign);
+            const result = await recordCampaignSend(payload);
+            if (result.error) {
+                message.status = "pending";
+                saveMessages(messages);
+                return;
+            }
+            trackEvent("valentine_sent_success", { campaignId: result.campaign.id, messageId: message.id });
+            lockCampaignIfNeeded(result.campaign);
         }
         if (rejectId) {
             message.status = "blocked";
