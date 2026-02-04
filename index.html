@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fast Valentine — Real Love Notes</title>
+    <link rel="stylesheet" href="valentine.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app">
+        <main class="app-content">
+            <section id="composeView" class="view">
+                <div class="hero">
+                    <h1 class="hero-title"><span class="hero-heart">❤</span>Fast Valentine</h1>
+                    <p>Send a real love note in seconds.</p>
+                </div>
+
+                <div class="card">
+                    <h2>Send a Valentine</h2>
+                    <form id="valentineForm" class="form">
+                        <label class="field">
+                            <span>Valentine message</span>
+                            <textarea id="valentineMessage" rows="6" placeholder="Write your Valentine message here..." required maxlength="800"></textarea>
+                            <div class="field-meta">
+                                <span id="messageCounter">0 / 800</span>
+                                <span id="templateHint">Templates</span>
+                            </div>
+                        </label>
+                        <div class="template-row" role="group" aria-label="Message templates">
+                            <button type="button" class="btn btn-secondary btn-chip" data-template="Sweet">Sweet</button>
+                            <button type="button" class="btn btn-secondary btn-chip" data-template="Funny">Funny</button>
+                            <button type="button" class="btn btn-secondary btn-chip" data-template="Grateful">Grateful</button>
+                            <button type="button" class="btn btn-secondary btn-chip" data-template="Friendly">Friendly</button>
+                            <button type="button" class="btn btn-secondary btn-chip" data-template="Bold">Bold</button>
+                        </div>
+                        <label class="field">
+                            <span>Attach an image (optional)</span>
+                            <input id="valentineImage" type="file" accept="image/png, image/jpeg, image/webp">
+                            <span class="field-note">JPG, PNG, or WebP up to 8 MB.</span>
+                        </label>
+                        <div id="imagePreview" class="image-preview hidden">
+                            <img id="imagePreviewImg" alt="Attached preview">
+                            <div class="image-preview-meta">
+                                <span id="imagePreviewName"></span>
+                                <button type="button" id="removeImageBtn" class="btn btn-secondary btn-small">Remove</button>
+                            </div>
+                        </div>
+                        <label class="field">
+                            <span>Recipient email</span>
+                            <input id="recipientEmail" type="email" placeholder="love@domain.com" required>
+                            <span id="domainRule" class="field-note hidden"></span>
+                        </label>
+                        <label class="toggle">
+                            <input id="copyToggle" type="checkbox">
+                            Send a copy to my email
+                        </label>
+                        <div id="copyFields" class="signature hidden">
+                            <label class="field">
+                                <span>Your email</span>
+                                <input id="senderEmail" type="email" placeholder="me@domain.com">
+                            </label>
+                        </div>
+                        <label class="toggle">
+                            <input id="anonymousToggle" type="checkbox" checked>
+                            Send anonymously
+                        </label>
+                        <div id="signatureFields" class="signature hidden">
+                            <label class="field">
+                                <span>Your name</span>
+                                <input id="senderName" type="text" placeholder="Sign your name">
+                            </label>
+                        </div>
+                        <div id="formMessage" class="form-message"></div>
+                        <button type="submit" id="sendBtn" class="btn btn-primary btn-large" disabled>Send Valentine</button>
+                    </form>
+                    <div class="helper">
+                        <span>Are you the creator?</span>
+                        <a id="adminLink" href="#">Open admin dashboard</a>
+                    </div>
+                </div>
+            </section>
+
+            <section id="thankYouView" class="view hidden">
+                <div class="card thankyou-card">
+                    <div class="thankyou-mark">★</div>
+                    <h2>Your Valentine has been sent 💜</h2>
+                    <p class="subtitle">We shared your note. Want to send another?</p>
+                    <div class="actions-row center">
+                        <button id="sendAnotherBtn" class="btn btn-primary">Send another</button>
+                        <button id="copyShareBtn" class="btn btn-secondary">Copy share link</button>
+                    </div>
+                    <div id="copyStatus" class="status-note"></div>
+                </div>
+            </section>
+
+            <section id="recipientView" class="view hidden">
+                <div class="card recipient-card">
+                    <div class="pill">Valentine</div>
+                    <h2 id="recipientTitle">A Valentine for you</h2>
+                    <p id="recipientMessage" class="recipient-message"></p>
+                    <div id="recipientImageWrap" class="recipient-image hidden">
+                        <img id="recipientImage" alt="Valentine attachment">
+                    </div>
+                    <div id="recipientSignature" class="recipient-signature hidden"></div>
+                    <div class="divider"></div>
+                    <button id="recipientCta" class="btn btn-secondary">Send a Valentine too</button>
+                </div>
+            </section>
+
+            <section id="adminView" class="view hidden">
+                <div class="card">
+                    <div class="admin-header">
+                        <div>
+                            <h2>Creator dashboard</h2>
+                            <p class="subtitle">Track sent Valentines, share the link, and export data.</p>
+                        </div>
+                        <button id="adminBackBtn" class="btn btn-secondary btn-small">Back to send</button>
+                    </div>
+
+                    <div class="share-row">
+                        <input id="shareLink" type="text" readonly>
+                        <button id="copyLinkBtn" class="btn btn-secondary">Copy link</button>
+                        <button id="downloadQrBtn" class="btn btn-secondary">Download QR</button>
+                    </div>
+                    <div class="share-row">
+                        <input id="adminShareLink" type="text" readonly>
+                        <button id="copyAdminBtn" class="btn btn-secondary">Copy admin link</button>
+                    </div>
+                    <div class="share-row">
+                        <input id="shortLink" type="text" readonly placeholder="Optional short link">
+                        <button id="copyShortBtn" class="btn btn-secondary">Copy short</button>
+                    </div>
+
+                    <div class="qr-block">
+                        <div class="qr-label">QR code</div>
+                        <img id="qrCodeImage" alt="QR code for Valentine link" loading="lazy">
+                        <div id="qrCodeFallback" class="qr-fallback hidden">QR code unavailable</div>
+                    </div>
+
+                    <div class="admin-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Total sent</div>
+                            <div id="totalSent" class="stat-value">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Sent today</div>
+                            <div id="sentToday" class="stat-value">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Anonymous vs Signed</div>
+                            <div id="anonymousSigned" class="stat-value">0 / 0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Delivery status</div>
+                            <div id="deliveryStatus" class="stat-value">0 / 0</div>
+                        </div>
+                    </div>
+
+                    <div class="charts">
+                        <div class="chart-card">
+                            <h3>Valentines sent</h3>
+                            <canvas id="volumeChart" height="180"></canvas>
+                        </div>
+                        <div class="chart-card">
+                            <h3>Anonymous vs signed</h3>
+                            <canvas id="anonymousChart" height="180"></canvas>
+                        </div>
+                        <div class="chart-card">
+                            <h3>Template usage</h3>
+                            <canvas id="templateChart" height="180"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="list-card">
+                        <h3>Settings</h3>
+                        <div class="settings-grid">
+                            <label class="field">
+                                <span>Campaign start</span>
+                                <input id="campaignStart" type="datetime-local">
+                            </label>
+                            <label class="field">
+                                <span>Campaign end</span>
+                                <input id="campaignEnd" type="datetime-local">
+                            </label>
+                            <label class="field">
+                                <span>Max messages per sender / day</span>
+                                <input id="rateLimit" type="number" min="1" step="1" placeholder="10">
+                            </label>
+                            <label class="field">
+                                <span>Allowed recipient domains</span>
+                                <input id="allowedDomains" type="text" placeholder="company.com, partner.org">
+                                <span class="field-note">Leave empty for all domains.</span>
+                            </label>
+                        </div>
+                        <div class="settings-row">
+                            <label class="toggle">
+                                <input id="blockLinks" type="checkbox" checked>
+                                Block clickable links in messages
+                            </label>
+                            <label class="toggle">
+                                <input id="profanityFilter" type="checkbox" checked>
+                                Basic profanity filter
+                            </label>
+                            <label class="toggle">
+                                <input id="moderationToggle" type="checkbox">
+                                Require manual moderation
+                            </label>
+                        </div>
+                        <button id="saveSettingsBtn" class="btn btn-secondary btn-small">Save settings</button>
+                    </div>
+
+                    <div class="list-card">
+                        <h3>Recent deliveries</h3>
+                        <div id="recentList" class="recent-list"></div>
+                    </div>
+                    <div class="list-card hidden" id="moderationCard">
+                        <h3>Moderation queue</h3>
+                        <div id="moderationList" class="recent-list"></div>
+                    </div>
+
+                    <div class="actions-row">
+                        <button id="exportCsvBtn" class="btn btn-secondary">Export CSV</button>
+                        <button id="seedDataBtn" class="btn btn-secondary">Add demo data</button>
+                        <button id="clearDataBtn" class="btn btn-secondary">Clear data</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="valentine.js"></script>
+</body>
+</html>
