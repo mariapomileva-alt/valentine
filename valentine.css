@@ -194,11 +194,6 @@ body {
     pointer-events: auto;
 }
 
-.field-action-row {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: -6px;
-}
 
 .field-meta {
     display: flex;
