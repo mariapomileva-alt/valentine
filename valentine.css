@@ -187,11 +187,14 @@ body {
     width: 100%;
     position: relative;
     z-index: 1;
+    margin-bottom: 8px;
 }
 
 .field-title-row .btn {
     margin-left: auto;
     pointer-events: auto;
+    position: relative;
+    z-index: 3;
 }
 
 
