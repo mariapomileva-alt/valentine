@@ -66,6 +66,7 @@ const profanityFilter = document.getElementById("profanityFilter");
 const moderationToggle = document.getElementById("moderationToggle");
 const saveSettingsBtn = document.getElementById("saveSettingsBtn");
 
+const API_BASE = "https://valentine-dafo.onrender.com";
 const STORAGE_KEY = "fastValentineMessages";
 const CAMPAIGN_KEY = "fastValentineCampaign";
 const CAMPAIGN_ID_KEY = "fastValentineCampaignId";
@@ -232,7 +233,7 @@ const fetchCampaignState = async () => {
         return getCampaign();
     }
     const token = adminToken || getStoredAdminToken(campaignId);
-    const url = new URL("/api/campaign", window.location.origin);
+    const url = new URL("/api/campaign", API_BASE);
     url.searchParams.set("c", campaignId);
     if (token) {
         url.searchParams.set("admin", token);
@@ -269,7 +270,7 @@ const refreshCampaignState = async () => {
 
 const createCampaign = async () => {
     try {
-        const response = await fetch("/api/create-campaign", {
+        const response = await fetch(`${API_BASE}/api/create-campaign`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
         });
@@ -293,7 +294,7 @@ const recordCampaignSend = async (payload) => {
     }
     const previous = getCampaign();
     try {
-        const response = await fetch("/api/send", {
+        const response = await fetch(`${API_BASE}/api/send`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ campaign_id: campaignId, message: payload }),
@@ -1273,7 +1274,7 @@ copyShortBtn.addEventListener("click", async () => {
             return;
         }
         const token = adminToken || getStoredAdminToken(campaign.id);
-        const response = await fetch("/api/create-checkout-session", {
+        const response = await fetch(`${API_BASE}/api/create-checkout-session`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ campaign_id: campaign.id, admin_token: token }),
@@ -1302,7 +1303,7 @@ downloadQrBtn.addEventListener("click", () => {
 exportCsvBtn.addEventListener("click", async () => {
     const campaignId = getCampaignId();
     const token = adminToken || getStoredAdminToken(campaignId);
-    const url = new URL("/api/export.csv", window.location.origin);
+    const url = new URL("/api/export.csv", API_BASE);
     url.searchParams.set("c", campaignId);
     if (token) {
         url.searchParams.set("admin", token);
