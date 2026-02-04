@@ -517,7 +517,7 @@ const applyCampaignState = async () => {
     }
     const requestBlock = document.getElementById("campaignRequestBlock");
     if (requestBlock) {
-        requestBlock.classList.add("hidden");
+        requestBlock.classList.remove("hidden");
     }
     const campaign = await refreshCampaignState();
     lockCampaignIfNeeded(campaign);
@@ -1028,30 +1028,31 @@ const setInitialView = async () => {
         return;
     }
 
+    const block = ensureCampaignRequestBlock();
+    block.classList.remove("hidden");
+    const button = block.querySelector("#getCampaignBtn");
+    if (button && !button.dataset.bound) {
+        button.dataset.bound = "true";
+        button.addEventListener("click", async () => {
+            const created = await createCampaign();
+            if (!created?.campaign_id || !created?.admin_token) {
+                formMessage.textContent = "Unable to create a campaign right now.";
+                return;
+            }
+            adminToken = created.admin_token;
+            window.localStorage.setItem(`${ADMIN_TOKEN_PREFIX}${created.campaign_id}`, adminToken);
+            window.localStorage.setItem(CAMPAIGN_ID_KEY, created.campaign_id);
+            const url = new URL(created.admin_url, window.location.origin);
+            window.history.replaceState({}, "", url.toString());
+            setAdminLinks();
+            await refreshCampaignState();
+            await renderAdmin();
+            showView(adminView);
+        });
+    }
+
     if (!campaignId && !campaignParam) {
         showView(composeView);
-        const block = ensureCampaignRequestBlock();
-        block.classList.remove("hidden");
-        const button = block.querySelector("#getCampaignBtn");
-        if (button && !button.dataset.bound) {
-            button.dataset.bound = "true";
-            button.addEventListener("click", async () => {
-                const created = await createCampaign();
-                if (!created?.campaign_id || !created?.admin_token) {
-                    formMessage.textContent = "Unable to create a campaign right now.";
-                    return;
-                }
-                adminToken = created.admin_token;
-                window.localStorage.setItem(`${ADMIN_TOKEN_PREFIX}${created.campaign_id}`, adminToken);
-                window.localStorage.setItem(CAMPAIGN_ID_KEY, created.campaign_id);
-                const url = new URL(created.admin_url, window.location.origin);
-                window.history.replaceState({}, "", url.toString());
-                setAdminLinks();
-                await refreshCampaignState();
-                await renderAdmin();
-                showView(adminView);
-            });
-        }
         sendBtn.disabled = true;
         formMessage.textContent = "Create a campaign link to start sending.";
         return;
