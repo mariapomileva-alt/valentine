@@ -8,6 +8,7 @@ const valentineForm = document.getElementById("valentineForm");
 const valentineMessage = document.getElementById("valentineMessage");
 const messageCounter = document.getElementById("messageCounter");
 const valentineImage = document.getElementById("valentineImage");
+const getCampaignBtn = document.getElementById("getCampaignBtn");
 const recipientEmail = document.getElementById("recipientEmail");
 const anonymousToggle = document.getElementById("anonymousToggle");
 const signatureFields = document.getElementById("signatureFields");
@@ -492,32 +493,11 @@ const updateDomainRule = () => {
     }
 };
 
-const ensureCampaignRequestBlock = () => {
-    let block = document.getElementById("campaignRequestBlock");
-    if (!block) {
-        block = document.createElement("div");
-        block.id = "campaignRequestBlock";
-        block.className = "helper";
-        const button = document.createElement("button");
-        button.type = "button";
-        button.id = "getCampaignBtn";
-        button.className = "btn btn-secondary";
-        button.textContent = "Get campaign link";
-        block.appendChild(button);
-        const helper = document.querySelector(".helper");
-        helper?.parentElement?.insertBefore(block, helper);
-    }
-    return block;
-};
 
 const applyCampaignState = async () => {
     const campaignId = getCampaignId();
     if (!campaignId) {
         return;
-    }
-    const requestBlock = document.getElementById("campaignRequestBlock");
-    if (requestBlock) {
-        requestBlock.classList.remove("hidden");
     }
     const campaign = await refreshCampaignState();
     lockCampaignIfNeeded(campaign);
@@ -1028,12 +1008,9 @@ const setInitialView = async () => {
         return;
     }
 
-    const block = ensureCampaignRequestBlock();
-    block.classList.remove("hidden");
-    const button = block.querySelector("#getCampaignBtn");
-    if (button && !button.dataset.bound) {
-        button.dataset.bound = "true";
-        button.addEventListener("click", async () => {
+    if (getCampaignBtn && !getCampaignBtn.dataset.bound) {
+        getCampaignBtn.dataset.bound = "true";
+        getCampaignBtn.addEventListener("click", async () => {
             const created = await createCampaign();
             if (!created?.campaign_id || !created?.admin_token) {
                 formMessage.textContent = "Unable to create a campaign right now.";
