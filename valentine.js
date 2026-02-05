@@ -1020,12 +1020,7 @@ const setInitialView = async () => {
             adminToken = created.admin_token;
             window.localStorage.setItem(`${ADMIN_TOKEN_PREFIX}${created.campaign_id}`, adminToken);
             window.localStorage.setItem(CAMPAIGN_ID_KEY, created.campaign_id);
-            const url = new URL(created.admin_url, window.location.origin);
-            window.history.replaceState({}, "", url.toString());
-            setAdminLinks();
-            await refreshCampaignState();
-            await renderAdmin();
-            showView(adminView);
+            window.location.href = created.admin_url;
         });
     }
 
