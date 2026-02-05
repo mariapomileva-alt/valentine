@@ -662,7 +662,15 @@ const renderCharts = (messages) => {
                 legend: { display: false },
             },
             scales: {
-                y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                x: {
+                    grid: { color: "rgba(11, 45, 91, 0.08)" },
+                    ticks: { color: "rgba(90, 107, 127, 0.7)" },
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1, color: "rgba(90, 107, 127, 0.7)" },
+                    grid: { color: "rgba(11, 45, 91, 0.08)" },
+                },
             },
         },
     });
@@ -683,7 +691,10 @@ const renderCharts = (messages) => {
         options: {
             responsive: true,
             plugins: {
-                legend: { position: "bottom" },
+                legend: {
+                    position: "bottom",
+                    labels: { color: "rgba(90, 107, 127, 0.7)" },
+                },
             },
         },
     });
@@ -713,7 +724,15 @@ const renderCharts = (messages) => {
                 legend: { display: false },
             },
             scales: {
-                y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                x: {
+                    grid: { color: "rgba(11, 45, 91, 0.08)" },
+                    ticks: { color: "rgba(90, 107, 127, 0.7)" },
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: { stepSize: 1, color: "rgba(90, 107, 127, 0.7)" },
+                    grid: { color: "rgba(11, 45, 91, 0.08)" },
+                },
             },
         },
     });
