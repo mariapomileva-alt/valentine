@@ -1221,6 +1221,7 @@ valentineForm.addEventListener("submit", async (event) => {
         const payload = {
             created_at: message.createdAt,
             recipient_email: message.recipientEmail,
+            message_text: message.message,
             sender_name: message.senderName || "",
             anonymous: message.anonymous,
             has_image: Boolean(message.image),
@@ -1372,6 +1373,7 @@ moderationList.addEventListener("click", (event) => {
             const payload = {
                 created_at: message.createdAt,
                 recipient_email: message.recipientEmail,
+                message_text: message.message,
                 sender_name: message.senderName || "",
                 anonymous: message.anonymous,
                 has_image: Boolean(message.image),
