@@ -119,11 +119,13 @@
                 <div class="card">
                     <div class="admin-header">
                         <div>
-                            <h2>Creator dashboard</h2>
-                            <p class="subtitle">Track sent Valentines, share the link, and export data.</p>
+                            <h2>Your Valentine campaign</h2>
+                            <p class="subtitle">Everything you need to manage and grow it is here.</p>
                         </div>
                         <button id="adminBackBtn" class="btn btn-secondary btn-small">Back to send</button>
                     </div>
+
+                    <div class="section-title">Share your campaign</div>
 
                     <div class="share-row">
                         <input id="shareLink" type="text" readonly>
@@ -134,11 +136,9 @@
                         <input id="adminShareLink" type="text" readonly>
                         <button id="copyAdminBtn" class="btn btn-secondary">Copy admin link</button>
                     </div>
-                    <div class="campaign-note field-note">
-                        Free includes 25 emails and masked exports. Unlock for unlimited sending, full CSV, and extended analytics.
-                    </div>
-                    <div class="actions-row">
-                        <button type="button" id="createUnlockBtn" class="btn btn-primary btn-small">Unlock now €6.99</button>
+                    <div class="field-note admin-note">Admin access — keep this link private. Save or bookmark it to manage your campaign.</div>
+                    <div class="share-actions">
+                        <button type="button" id="emailAdminBtn" class="btn btn-secondary btn-small">Send admin link to my email</button>
                     </div>
                     <div class="share-row">
                         <input id="shortLink" type="text" readonly placeholder="Optional short link">
@@ -167,26 +167,56 @@
                         <div class="stat-card">
                             <div class="stat-label">Delivery status</div>
                             <div id="deliveryStatus" class="stat-value">0 / 0</div>
+                            <div class="stat-helper">Free campaign limit</div>
                         </div>
+                    </div>
+
+                    <div class="list-card" id="unlockBlock">
+                        <h3>Unlock full campaign control</h3>
+                        <p class="subtitle">Your campaign is growing. Unlocking removes limits and gives you full access — right here.</p>
+                        <div class="field-note">You can unlock this campaign at any time from this dashboard. No new links, no setup, no subscriptions.</div>
+                        <div class="comparison-grid">
+                            <div class="comparison-col">
+                                <div class="comparison-title">Free</div>
+                                <div class="comparison-item">Up to 25 Valentines</div>
+                                <div class="comparison-item">Basic stats</div>
+                                <div class="comparison-item">No payment required</div>
+                            </div>
+                            <div class="comparison-col">
+                                <div class="comparison-title">Unlocked (€6.99)</div>
+                                <div class="comparison-item">Unlimited Valentines</div>
+                                <div class="comparison-item">Full analytics & CSV export</div>
+                                <div class="comparison-item">No watermark</div>
+                                <div class="comparison-item">One-time payment</div>
+                            </div>
+                        </div>
+                        <div class="actions-row">
+                            <button type="button" id="createUnlockBtn" class="btn btn-primary btn-small">Unlock campaign — €6.99</button>
+                        </div>
+                        <div class="field-note">One-time payment · No subscription</div>
                     </div>
 
                     <div class="charts">
                         <div class="chart-card">
                             <h3>Valentines sent</h3>
+                            <div class="chart-note">Activity over time</div>
                             <canvas id="volumeChart" height="180"></canvas>
                         </div>
                         <div class="chart-card">
                             <h3>Anonymous vs signed</h3>
+                            <div class="chart-note">Message visibility</div>
                             <canvas id="anonymousChart" height="180"></canvas>
                         </div>
                         <div class="chart-card">
                             <h3>Template usage</h3>
+                            <div class="chart-note">Popular templates</div>
                             <canvas id="templateChart" height="180"></canvas>
                         </div>
                     </div>
 
                     <div class="list-card">
                         <h3>Settings</h3>
+                        <div class="field-note">Control how your campaign behaves.</div>
                         <div class="settings-grid">
                             <label class="field">
                                 <span>Campaign start</span>
@@ -206,6 +236,7 @@
                                 <span class="field-note">Leave empty for all domains.</span>
                             </label>
                         </div>
+                        <div class="settings-group-title">Safety & moderation</div>
                         <div class="settings-row">
                             <label class="toggle">
                                 <input id="blockLinks" type="checkbox" checked>
@@ -225,6 +256,7 @@
 
                     <div class="list-card">
                         <h3>Recent deliveries</h3>
+                        <div class="field-note">Delivery status is updated in real time. If something doesn’t go through, you’ll see it here.</div>
                         <div id="recentList" class="recent-list"></div>
                     </div>
                     <div class="list-card hidden" id="moderationCard">
