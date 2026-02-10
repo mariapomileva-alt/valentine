@@ -20,12 +20,16 @@
 
                 <div class="card">
                     <form id="valentineForm" class="form">
-                        <label class="field">
-                            <div class="field-title-row">
-                                <span>Valentine message</span>
-                                <button type="button" id="getCampaignBtn" class="btn btn-secondary btn-small">Get campaign link</button>
+                        <div class="field-title-row">
+                            <span>Valentine message</span>
+                            <div class="campaign-actions">
+                                <button type="button" id="getCampaignBtn" class="btn btn-secondary btn-small">Create team campaign</button>
+                                <button type="button" id="createUnlockBtn" class="btn btn-primary btn-small">Unlock now €6.99</button>
                             </div>
-                            <textarea id="valentineMessage" rows="6" placeholder="Write your Valentine message here..." required maxlength="800"></textarea>
+                        </div>
+                        <div class="field-note campaign-note">Free includes 25 emails and masked exports. Unlock for unlimited sending and full CSV.</div>
+                        <label class="field">
+                            <textarea id="valentineMessage" rows="6" placeholder="Write your Valentine message here..." required maxlength="800" aria-label="Valentine message"></textarea>
                             <div class="field-meta">
                                 <span id="messageCounter">0 / 800</span>
                                 <span id="templateHint">Templates</span>
