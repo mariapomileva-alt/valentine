@@ -410,6 +410,10 @@ body {
     margin: 12px 0 6px;
 }
 
+.admin-intro {
+    margin-top: 6px;
+}
+
 .share-row {
     display: flex;
     gap: 12px;
@@ -456,7 +460,7 @@ body {
 }
 
 .qr-block {
-    margin-top: 20px;
+    margin-top: 18px;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -464,11 +468,12 @@ body {
 }
 
 .qr-block img {
-    width: 180px;
-    height: 180px;
+    width: 150px;
+    height: 150px;
     border-radius: 16px;
     border: 1px solid var(--line);
     background: #ffffff;
+    padding: 6px;
 }
 
 .qr-label {
@@ -484,7 +489,7 @@ body {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 16px;
-    margin: 24px 0 28px;
+    margin: 26px 0 30px;
 }
 
 .stat-card {
@@ -567,7 +572,7 @@ body {
 }
 
 .list-card {
-    margin-top: 26px;
+    margin-top: 30px;
     border: 1px solid rgba(11, 45, 91, 0.08);
     border-radius: var(--radius-md);
     padding: 16px;
