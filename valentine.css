@@ -201,6 +201,9 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 10px;
+    position: relative;
+    z-index: 4;
+    pointer-events: auto;
 }
 
 .campaign-note {
