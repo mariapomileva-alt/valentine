@@ -9,6 +9,7 @@ const valentineMessage = document.getElementById("valentineMessage");
 const messageCounter = document.getElementById("messageCounter");
 const valentineImage = document.getElementById("valentineImage");
 const getCampaignBtn = document.getElementById("getCampaignBtn");
+const createUnlockBtn = document.getElementById("createUnlockBtn");
 const recipientEmail = document.getElementById("recipientEmail");
 const anonymousToggle = document.getElementById("anonymousToggle");
 const signatureFields = document.getElementById("signatureFields");
@@ -1040,6 +1041,31 @@ const setInitialView = async () => {
             window.localStorage.setItem(`${ADMIN_TOKEN_PREFIX}${created.campaign_id}`, adminToken);
             window.localStorage.setItem(CAMPAIGN_ID_KEY, created.campaign_id);
             window.location.href = created.admin_url;
+        });
+    }
+
+    if (createUnlockBtn && !createUnlockBtn.dataset.bound) {
+        createUnlockBtn.dataset.bound = "true";
+        createUnlockBtn.addEventListener("click", async () => {
+            const created = await createCampaign();
+            if (!created?.campaign_id || !created?.admin_token) {
+                formMessage.textContent = "Unable to create a campaign right now.";
+                return;
+            }
+            adminToken = created.admin_token;
+            window.localStorage.setItem(`${ADMIN_TOKEN_PREFIX}${created.campaign_id}`, adminToken);
+            window.localStorage.setItem(CAMPAIGN_ID_KEY, created.campaign_id);
+            const response = await fetch(`${API_BASE}/api/create-checkout-session`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ campaign_id: created.campaign_id, admin_token: adminToken }),
+            });
+            const data = await response.json();
+            if (data?.checkout_url) {
+                window.location.href = data.checkout_url;
+                return;
+            }
+            formMessage.textContent = "Unable to start checkout right now.";
         });
     }
 
