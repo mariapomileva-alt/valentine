@@ -212,12 +212,29 @@ app.post("/api/send", async (req, res) => {
   const isSuccess = message?.status === "sent";
   if (isSuccess) {
     const subject = "You received a Valentine 💜";
-    const text = `Someone sent you a Valentine. Open it here: ${message.recipient_link}`;
+    const safeMessage = String(message.message_text || "").replace(/[<>]/g, "");
+    const senderLine = message.anonymous ? "" : message.sender_name ? `From ${message.sender_name}` : "";
+    const text = [
+      "Someone sent you a Valentine.",
+      senderLine,
+      safeMessage ? `Message: ${safeMessage}` : "",
+      `Open it here: ${message.recipient_link}`,
+    ].filter(Boolean).join("\n");
+    const html = `
+      <div style="font-family: Arial, sans-serif; color:#0b2d5b; line-height:1.5;">
+        <h2 style="margin:0 0 12px;">You received a Valentine 💜</h2>
+        ${senderLine ? `<div style="font-size:14px; color:#5a6b7f; margin-bottom:12px;">${senderLine}</div>` : ""}
+        ${safeMessage ? `<div style="padding:12px 16px; background:#ffe7f1; border-radius:12px; margin-bottom:16px;">${safeMessage}</div>` : ""}
+        <a href="${message.recipient_link}" style="display:inline-block; padding:12px 18px; background:#ff4d8d; color:#fff; text-decoration:none; border-radius:999px; font-weight:700;">Open your Valentine</a>
+        <div style="margin-top:16px; font-size:12px; color:#5a6b7f;">If the button doesn't work, open this link: ${message.recipient_link}</div>
+      </div>
+    `;
     const sendResult = await resend.emails.send({
       from: RESEND_FROM,
       to: message.recipient_email,
       subject,
       text,
+      html,
     });
     if (!sendResult?.data?.id) {
       res.status(500).json({ error: "email_send_failed" });
