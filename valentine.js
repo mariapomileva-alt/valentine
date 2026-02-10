@@ -44,6 +44,7 @@ const shortLink = document.getElementById("shortLink");
 const copyLinkBtn = document.getElementById("copyLinkBtn");
 const copyAdminBtn = document.getElementById("copyAdminBtn");
 const copyShortBtn = document.getElementById("copyShortBtn");
+const emailAdminBtn = document.getElementById("emailAdminBtn");
 const qrCodeImage = document.getElementById("qrCodeImage");
 const qrCodeFallback = document.getElementById("qrCodeFallback");
 const downloadQrBtn = document.getElementById("downloadQrBtn");
@@ -550,6 +551,15 @@ const applyCampaignState = async () => {
             copyShortBtn.dataset.mode = "copy";
         }
     }
+
+    if (createUnlockBtn) {
+        createUnlockBtn.disabled = campaign.status === "unlocked";
+        if (campaign.status === "unlocked") {
+            createUnlockBtn.textContent = "Campaign unlocked";
+        } else {
+            createUnlockBtn.textContent = "Unlock campaign — €6.99";
+        }
+    }
 };
 
 const resetForm = () => {
@@ -803,9 +813,7 @@ const renderAdmin = async () => {
     totalSent.textContent = campaign.sent_count.toString();
     sentToday.textContent = todayCount.toString();
     anonymousSigned.textContent = `${anonymousTotal} / ${sentMessages.length - anonymousTotal}`;
-    deliveryStatus.textContent = isCampaignUnlocked(campaign)
-        ? "Unlimited"
-        : `${campaign.sent_count} / ${campaign.free_limit}`;
+    deliveryStatus.textContent = `${campaign.sent_count} / ${campaign.free_limit}`;
 
     renderCharts(messages);
 
@@ -816,6 +824,10 @@ const renderAdmin = async () => {
     }
     await applyCampaignState();
     renderRecentList(messages);
+
+    if (exportCsvBtn) {
+        exportCsvBtn.classList.toggle("is-primary", isCampaignUnlocked(campaign));
+    }
 };
 
 const handleCopy = async (value) => {
@@ -1362,6 +1374,18 @@ exportCsvBtn.addEventListener("click", async () => {
     document.body.removeChild(link);
     URL.revokeObjectURL(link.href);
 });
+
+if (emailAdminBtn) {
+    emailAdminBtn.addEventListener("click", () => {
+        const adminLinkValue = adminShareLink.value;
+        if (!adminLinkValue) {
+            return;
+        }
+        const subject = encodeURIComponent("Your Fast Valentine admin link");
+        const body = encodeURIComponent(`Save this private link to manage your campaign:\n${adminLinkValue}`);
+        window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    });
+}
 
 seedDataBtn.addEventListener("click", () => {
     seedDemoData();
