@@ -197,6 +197,16 @@ body {
     z-index: 3;
 }
 
+.campaign-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.campaign-note {
+    margin-bottom: 4px;
+}
+
 
 .field-meta {
     display: flex;
