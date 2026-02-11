@@ -121,12 +121,18 @@
                         <div>
                             <h2>Your Valentine campaign</h2>
                             <p class="subtitle">Everything you need to manage and grow it is here.</p>
-                            <div class="field-note admin-intro">This is your Valentine campaign.</div>
-                            <div class="field-note admin-intro">It gives you visibility, delivery tracking, and a single place to manage your Valentine event.</div>
-                            <div class="field-note admin-intro">Share the campaign link to keep everything in one managed space.</div>
-                            <div class="field-note admin-intro">You can manage everything here — links, delivery status, and campaign expansion.</div>
                         </div>
                         <button id="adminBackBtn" class="btn btn-secondary btn-small">Back to send</button>
+                    </div>
+
+                    <div class="list-card campaign-summary">
+                        <h3>This campaign gives you:</h3>
+                        <ul class="summary-list">
+                            <li>Delivery visibility</li>
+                            <li>Stats tracking</li>
+                            <li>A single managed Valentine event</li>
+                        </ul>
+                        <div class="field-note admin-intro">You can manage everything here — links, delivery status, and campaign expansion.</div>
                     </div>
 
                     <div class="section-title">Share your campaign</div>
@@ -135,25 +141,28 @@
                     <div class="share-row">
                         <input id="shareLink" type="text" readonly>
                         <button id="copyLinkBtn" class="btn btn-secondary">Copy link</button>
-                        <button id="downloadQrBtn" class="btn btn-secondary">Download QR</button>
+                        <button id="downloadQrBtn" class="btn btn-secondary hidden">Download QR</button>
                     </div>
-                    <div class="share-row">
-                        <input id="adminShareLink" type="text" readonly>
-                        <button id="copyAdminBtn" class="btn btn-secondary">Copy admin link</button>
+                    <div class="share-grid">
+                        <div class="qr-block">
+                            <div class="qr-label">QR code</div>
+                            <img id="qrCodeImage" alt="QR code for Valentine link" loading="lazy">
+                            <div id="qrCodeFallback" class="qr-fallback hidden">QR code unavailable</div>
+                        </div>
+                        <div class="share-admin">
+                            <div class="share-row">
+                                <input id="adminShareLink" type="text" readonly>
+                                <button id="copyAdminBtn" class="btn btn-secondary">Copy admin link</button>
+                            </div>
+                            <div class="field-note admin-note">Admin access — keep this link private. Save or bookmark it to manage your campaign.</div>
+                            <div class="share-actions hidden">
+                                <button type="button" id="emailAdminBtn" class="btn btn-secondary btn-small">Send admin link to my email</button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="field-note admin-note">Admin access — keep this link private. Save or bookmark it to manage your campaign.</div>
-                    <div class="share-actions">
-                        <button type="button" id="emailAdminBtn" class="btn btn-secondary btn-small">Send admin link to my email</button>
-                    </div>
-                    <div class="share-row">
+                    <div class="share-row hidden">
                         <input id="shortLink" type="text" readonly placeholder="Optional short link">
                         <button id="copyShortBtn" class="btn btn-secondary">Copy short</button>
-                    </div>
-
-                    <div class="qr-block">
-                        <div class="qr-label">QR code</div>
-                        <img id="qrCodeImage" alt="QR code for Valentine link" loading="lazy">
-                        <div id="qrCodeFallback" class="qr-fallback hidden">QR code unavailable</div>
                     </div>
 
                     <div class="admin-grid">
@@ -169,7 +178,7 @@
                             <div class="stat-label">Anonymous vs Signed</div>
                             <div id="anonymousSigned" class="stat-value">0 / 0</div>
                         </div>
-                        <div class="stat-card">
+                        <div class="stat-card primary">
                             <div class="stat-label">Delivery status</div>
                             <div id="deliveryStatus" class="stat-value">0 / 0</div>
                             <div class="stat-helper">Free campaign limit</div>
