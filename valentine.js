@@ -272,10 +272,14 @@ const refreshCampaignState = async () => {
 
 const createCampaign = async () => {
     try {
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => controller.abort(), 45000);
         const response = await fetch(`${API_BASE}/api/create-campaign`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
+            signal: controller.signal,
         });
+        window.clearTimeout(timeoutId);
         if (!response.ok) {
             throw new Error("campaign_create_failed");
         }
@@ -1044,9 +1048,10 @@ const setInitialView = async () => {
     if (getCampaignBtn && !getCampaignBtn.dataset.bound) {
         getCampaignBtn.dataset.bound = "true";
         getCampaignBtn.addEventListener("click", async () => {
+            formMessage.textContent = "Creating your campaign…";
             const created = await createCampaign();
             if (!created?.campaign_id || !created?.admin_token) {
-                formMessage.textContent = "Unable to create a campaign right now.";
+                formMessage.textContent = "Server is waking up. Please try again in a moment.";
                 return;
             }
             adminToken = created.admin_token;
@@ -1059,18 +1064,17 @@ const setInitialView = async () => {
     if (createUnlockBtn && !createUnlockBtn.dataset.bound) {
         createUnlockBtn.dataset.bound = "true";
         createUnlockBtn.addEventListener("click", async () => {
-            const created = await createCampaign();
-            if (!created?.campaign_id || !created?.admin_token) {
-                formMessage.textContent = "Unable to create a campaign right now.";
+            const campaignId = getCampaignId();
+            const token = adminToken || getStoredAdminToken(campaignId);
+            if (!campaignId || !token) {
+                formMessage.textContent = "Open the admin link to unlock this campaign.";
                 return;
             }
-            adminToken = created.admin_token;
-            window.localStorage.setItem(`${ADMIN_TOKEN_PREFIX}${created.campaign_id}`, adminToken);
-            window.localStorage.setItem(CAMPAIGN_ID_KEY, created.campaign_id);
+            formMessage.textContent = "Opening secure checkout…";
             const response = await fetch(`${API_BASE}/api/create-checkout-session`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ campaign_id: created.campaign_id, admin_token: adminToken }),
+                body: JSON.stringify({ campaign_id: campaignId, admin_token: token }),
             });
             const data = await response.json();
             if (data?.checkout_url) {
