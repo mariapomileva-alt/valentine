@@ -6,6 +6,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import crypto from "crypto";
 import { Resend } from "resend";
+import { createClient } from "@supabase/supabase-js";
 
 dotenv.config();
 
@@ -19,14 +20,19 @@ const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || "";
 const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || "http://localhost:5500/fast-valentine/index.html";
 const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
 const RESEND_FROM = process.env.RESEND_FROM || "";
+const SUPABASE_URL = process.env.SUPABASE_URL || "";
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || "";
 const PRICE_EUR = 699;
-const FREE_LIMIT = 25;
+const FREE_LIMIT = 400;
 const RATE_LIMIT_PER_DAY = Number(process.env.RATE_LIMIT_PER_DAY || 10);
 
 const stripe = new Stripe(STRIPE_SECRET_KEY, {
   apiVersion: "2024-04-10",
 });
 const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
+const supabase = SUPABASE_URL && SUPABASE_SERVICE_KEY
+  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, { auth: { persistSession: false } })
+  : null;
 
 const dataFile = path.join(__dirname, "campaigns.json");
 const messagesFile = path.join(__dirname, "messages.json");
@@ -64,37 +70,104 @@ const writeMessages = (messages) => {
   fs.writeFileSync(messagesFile, JSON.stringify(messages, null, 2));
 };
 
-const getOrCreateCampaign = (campaignId) => {
-  const campaigns = readCampaigns();
-  if (!campaigns[campaignId]) {
-    campaigns[campaignId] = {
-      id: campaignId,
-      admin_token: crypto.randomBytes(24).toString("hex"),
-      sent_count: 0,
-      free_limit: FREE_LIMIT,
-      status: "free",
-    };
-    writeCampaigns(campaigns);
+const getCampaignRecord = async (campaignId) => {
+  if (supabase) {
+    const { data, error } = await supabase.from("campaigns").select("*").eq("id", campaignId).single();
+    if (error && error.code === "PGRST116") {
+      return null;
+    }
+    if (error) {
+      throw error;
+    }
+    return data;
   }
-  return campaigns[campaignId];
+  const campaigns = readCampaigns();
+  return campaigns[campaignId] || null;
 };
 
-const updateCampaign = (campaignId, updater) => {
+const createCampaignRecord = async (campaign) => {
+  if (supabase) {
+    const { data, error } = await supabase.from("campaigns").insert(campaign).select().single();
+    if (error) {
+      throw error;
+    }
+    return data;
+  }
   const campaigns = readCampaigns();
-  const current = campaigns[campaignId] || {
+  campaigns[campaign.id] = campaign;
+  writeCampaigns(campaigns);
+  return campaign;
+};
+
+const updateCampaign = async (campaignId, updater) => {
+  const current = (await getCampaignRecord(campaignId)) || {
     id: campaignId,
     admin_token: crypto.randomBytes(24).toString("hex"),
     sent_count: 0,
     free_limit: FREE_LIMIT,
     status: "free",
+    created_at: new Date().toISOString(),
   };
   const updated = updater(current);
+  if (supabase) {
+    const { data, error } = await supabase.from("campaigns").upsert(updated, { onConflict: "id" }).select().single();
+    if (error) {
+      throw error;
+    }
+    return data;
+  }
+  const campaigns = readCampaigns();
   campaigns[campaignId] = updated;
   writeCampaigns(campaigns);
   return updated;
 };
 
-app.post("/api/stripe-webhook", express.raw({ type: "application/json" }), (req, res) => {
+const getOrCreateCampaign = async (campaignId) => {
+  const existing = await getCampaignRecord(campaignId);
+  if (existing) {
+    return existing;
+  }
+  return createCampaignRecord({
+    id: campaignId,
+    admin_token: crypto.randomBytes(24).toString("hex"),
+    sent_count: 0,
+    free_limit: FREE_LIMIT,
+    status: "free",
+    created_at: new Date().toISOString(),
+  });
+};
+
+const listMessages = async (campaignId) => {
+  if (supabase) {
+    const { data, error } = await supabase
+      .from("messages")
+      .select("*")
+      .eq("campaign_id", campaignId)
+      .order("created_at", { ascending: true });
+    if (error) {
+      throw error;
+    }
+    return data || [];
+  }
+  const messages = readMessages();
+  return messages[campaignId] || [];
+};
+
+const insertMessage = async (campaignId, entry) => {
+  if (supabase) {
+    const { error } = await supabase.from("messages").insert({ campaign_id: campaignId, ...entry });
+    if (error) {
+      throw error;
+    }
+    return;
+  }
+  const messages = readMessages();
+  messages[campaignId] = messages[campaignId] || [];
+  messages[campaignId].push(entry);
+  writeMessages(messages);
+};
+
+app.post("/api/stripe-webhook", express.raw({ type: "application/json" }), async (req, res) => {
   let event = null;
   if (STRIPE_WEBHOOK_SECRET) {
     const signature = req.headers["stripe-signature"];
@@ -117,7 +190,7 @@ app.post("/api/stripe-webhook", express.raw({ type: "application/json" }), (req,
     const session = event.data.object;
     const campaignId = session?.metadata?.campaign_id;
     if (campaignId) {
-      updateCampaign(campaignId, (current) => ({
+      await updateCampaign(campaignId, (current) => ({
         ...current,
         status: "unlocked",
       }));
@@ -139,18 +212,17 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 
-app.post("/api/create-campaign", (_req, res) => {
+app.post("/api/create-campaign", async (_req, res) => {
   const campaignId = crypto.randomBytes(8).toString("hex");
   const adminToken = crypto.randomBytes(24).toString("hex");
-  const campaigns = readCampaigns();
-  campaigns[campaignId] = {
+  await createCampaignRecord({
     id: campaignId,
     admin_token: adminToken,
     sent_count: 0,
     free_limit: FREE_LIMIT,
     status: "free",
-  };
-  writeCampaigns(campaigns);
+    created_at: new Date().toISOString(),
+  });
   res.json({
     campaign_id: campaignId,
     admin_token: adminToken,
@@ -159,13 +231,13 @@ app.post("/api/create-campaign", (_req, res) => {
   });
 });
 
-app.get("/api/campaign", (req, res) => {
+app.get("/api/campaign", async (req, res) => {
   const campaignId = req.query.c;
   if (!campaignId) {
     res.status(400).json({ error: "campaign_id_required" });
     return;
   }
-  const campaign = getOrCreateCampaign(campaignId);
+  const campaign = await getOrCreateCampaign(campaignId);
   const adminToken = req.query.admin;
   const isAdmin = adminToken && adminToken === campaign.admin_token;
   res.json({
@@ -186,7 +258,7 @@ app.post("/api/send", async (req, res) => {
     res.status(400).json({ error: "campaign_id_required" });
     return;
   }
-  const campaign = getOrCreateCampaign(campaignId);
+  const campaign = await getOrCreateCampaign(campaignId);
   if (campaign.status === "locked") {
     res.status(403).json({ error: "campaign_locked" });
     return;
@@ -249,7 +321,7 @@ app.post("/api/send", async (req, res) => {
       });
     }
 
-    const updated = updateCampaign(campaignId, (current) => {
+    const updated = await updateCampaign(campaignId, (current) => {
       const sentCount = current.sent_count + 1;
       const nextStatus = current.status === "unlocked"
         ? "unlocked"
@@ -263,7 +335,6 @@ app.post("/api/send", async (req, res) => {
       };
     });
 
-    const messages = readMessages();
     const entry = {
       created_at: message?.created_at || new Date().toISOString(),
       recipient_email: message?.recipient_email || "",
@@ -272,9 +343,7 @@ app.post("/api/send", async (req, res) => {
       has_image: Boolean(message?.has_image),
       status: message?.status || "sent",
     };
-    messages[campaignId] = messages[campaignId] || [];
-    messages[campaignId].push(entry);
-    writeMessages(messages);
+    await insertMessage(campaignId, entry);
 
     res.json({ is_admin: false, campaign: {
       id: updated.id,
@@ -293,20 +362,19 @@ app.post("/api/send", async (req, res) => {
   } });
 });
 
-app.get("/api/export.csv", (req, res) => {
+app.get("/api/export.csv", async (req, res) => {
   const campaignId = req.query.c;
   const adminToken = req.query.admin;
   if (!campaignId || !adminToken) {
     res.status(403).send("forbidden");
     return;
   }
-  const campaign = getOrCreateCampaign(campaignId);
+  const campaign = await getOrCreateCampaign(campaignId);
   if (campaign.admin_token !== adminToken) {
     res.status(403).send("forbidden");
     return;
   }
-  const messages = readMessages();
-  const rows = messages[campaignId] || [];
+  const rows = await listMessages(campaignId);
   const allowFull = campaign.status === "unlocked";
   const headers = [
     "timestamp",
