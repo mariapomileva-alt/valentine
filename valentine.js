@@ -83,7 +83,7 @@ const UNLOCK_PARAM = "unlock";
 const CAMPAIGN_PARAM = "c";
 const MAX_MESSAGE = 800;
 const MAX_IMAGE_SIZE = 8 * 1024 * 1024;
-const FREE_LIMIT = 25;
+const FREE_LIMIT = 400;
 const UNLOCK_PRICE = 6.99;
 const STRIPE_CHECKOUT_URL = "";
 
